@@ -12,14 +12,14 @@ import plotly.express as px # <-- Plotly Express 임포트
 import plotly.graph_objects as go
 import os
 
-# Plotly 관련 임포트는 try-except로 감싸서, 설치 안 되었을 때도 앱이 실행되도록 합니다.
-try:
-    import plotly.express as px 
-    import plotly.graph_objects as go
-    plotly_available = True
-except ImportError:
-    plotly_available = False
-    st.error("Plotly 라이브러리를 찾을 수 없습니다. requirements.txt 파일을 확인해주세요.") # <-- 디버깅 메시지
+# Plotly 관련 임포트는 try-except로 감싸서, 설치 안 되었을 때도 앱이 실행되도록 합니다. # <-- 변경된 부분!
+try: # <-- 변경된 부분!
+    import plotly.express as px # <-- 변경된 부분!
+    import plotly.graph_objects as go # <-- 변경된 부분!
+    plotly_available = True # <-- 변경된 부분!
+except ImportError: # <-- 변경된 부분!
+    plotly_available = False # <-- 변경된 부분!
+    st.error("Plotly 라이브러리를 찾을 수 없습니다. requirements.txt 파일을 확인해주세요.") # <-- 변경된 부분!
 
 warnings.filterwarnings('ignore') 
 
