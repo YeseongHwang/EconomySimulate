@@ -8,6 +8,7 @@ import warnings
 import datetime
 import random
 import platform
+import os # <-- os 모듈 추가 (폰트 파일 경로 확인용)
 
 warnings.filterwarnings('ignore') 
 
@@ -21,12 +22,51 @@ st.markdown("---")
 # 운영체제에 따라 폰트 설정
 if platform.system() == 'Windows':
     plt.rcParams['font.family'] = 'Malgun Gothic'
+    st.info("운영체제: Windows. '맑은 고딕' 폰트 사용 중.") # <-- 변경된 부분!
 elif platform.system() == 'Darwin': # Mac OS
     plt.rcParams['font.family'] = 'AppleGothic'
+    st.info("운영체제: macOS. 'AppleGothic' 폰트 사용 중.") # <-- 변경된 부분!
 else: # Linux (Streamlit Cloud 환경)
-    # Streamlit Cloud에 packages.txt를 통해 설치된 나눔고딕 폰트 사용
-    # 폰트 캐시 관련 코드 제거 후 가장 기본적인 설정으로 돌아갑니다.
-    plt.rcParams['font.family'] = 'NanumGothic' 
+    # 나눔고딕 폰트 찾기 및 설정
+    found_nanum_font = False
+    # 시스템에 설치된 모든 폰트 경로를 가져옵니다.
+    font_paths = fm.findSystemFonts(fontpaths=None, fontext='ttf')
+    
+    # 나눔고딕 폰트 이름을 찾기 위한 우선순위 리스트 (일반적으로 사용되는 나눔고딕 계열 폰트 이름)
+    nanum_font_names_to_try = ['NanumGothic', 'NanumGothicOTF', 'NanumGothicCoding', 'NanumBarunGothic']
+
+    # 먼저 특정 나눔고딕 폰트 이름을 직접 시도하여 찾습니다.
+    for name in nanum_font_names_to_try: # <-- 변경된 부분!
+        try:
+            # fm.findfont는 폰트 캐시를 자동으로 업데이트하는 역할도 합니다.
+            font_path = fm.findfont(fm.FontProperties(family=name))
+            # 찾은 폰트 파일의 실제 이름을 font.family로 설정합니다.
+            plt.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
+            st.success(f"운영체제: Linux. 나눔고딕 폰트 설정 성공: '{plt.rcParams['font.family']}'") # <-- 변경된 부분!
+            found_nanum_font = True
+            break
+        except Exception:
+            # 해당 이름의 폰트가 없으면 다음 폰트 이름 시도
+            pass
+
+    if not found_nanum_font: # <-- 변경된 부분!
+        # 그래도 못 찾으면, 시스템 폰트 목록을 직접 뒤져서 'Nanum'이 포함된 폰트 찾기
+        for font_path in font_paths: # <-- 변경된 부분!
+            try:
+                prop = fm.FontProperties(fname=font_path)
+                font_name = prop.get_name()
+                if "Nanum" in font_name: # <-- 변경된 부분!
+                    plt.rcParams['font.family'] = font_name
+                    st.success(f"운영체제: Linux. 'Nanum'이 포함된 폰트 발견 및 사용: '{font_name}'") # <-- 변경된 부분!
+                    found_nanum_font = True
+                    break
+            except Exception:
+                # 폰트 파일이 손상되었거나 읽을 수 없는 경우 무시
+                pass
+
+    if not found_nanum_font: # <-- 변경된 부분!
+        st.warning("운영체제: Linux. 나눔고딕 폰트를 찾을 수 없습니다. 일반 'sans-serif' 폰트로 대체합니다. `packages.txt`에 `fonts-nanum-extra`가 있는지 확인해주세요.") # <-- 변경된 부분!
+        plt.rcParams['font.family'] = ['sans-serif'] # 대체 폰트 (일반적인 고딕 계열)
 plt.rcParams['axes.unicode_minus'] = False # 마이너스 부호 깨짐 방지
 
 
