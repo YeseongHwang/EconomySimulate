@@ -110,53 +110,6 @@ korea_base_rate_df = parse_korea_base_rate_data(KOR_BASE_RATE_DATA_RAW)
 # 실제 시뮬레이션에 사용될 금리 리스트 (퍼센트)
 historical_base_rates_percent_app = korea_base_rate_df['Rate'].tolist()
 
-# --- 1. 인플레이션율 예측 모델 (기존 코드와 동일) ---
-@st.cache_data
-def predict_inflation(cpi_data_series, p, d, q, forecast_years):
-    # 인플레이션율 계산: 전년 동월 대비 CPI 변화율
-    inflation_rate_monthly = cpi_data_series.pct_change(periods=12).dropna() * 100
-    
-    # 충분한 데이터가 있어야 모델 훈련 가능
-    if len(inflation_rate_monthly) < 24: # 최소 2년치 데이터 필요 (ARIMA order 고려)
-        st.warning("인플레이션 예측을 위한 CPI 데이터가 부족합니다. 기본 인플레이션율을 사용합니다.")
-        return 0.025, inflation_rate_monthly, pd.Series()
-
-    train_size = int(len(inflation_rate_monthly) * 0.8)
-    train_data = inflation_rate_monthly[0:train_size]
-
-    try:
-        model = ARIMA(train_data, order=(p, d, q))
-        model_fit = model.fit()
-        forecast_steps = 12 * forecast_years
-        
-        # future_periods를 사용하여 예측 (새로운 predict 문법)
-        forecast = model_fit.forecast(steps=forecast_steps)
-        # forecast 인덱스 생성
-        last_train_date = train_data.index[-1]
-        forecast_index = pd.date_range(start=last_train_date + pd.DateOffset(months=1), periods=forecast_steps, freq='MS')
-        forecast.index = forecast_index
-
-        predicted_future_inflation_rate = forecast.mean() / 100 # 예측 기간의 평균 인플레이션율
-        return predicted_future_inflation_rate, inflation_rate_monthly, forecast
-    except Exception as e:
-        st.error(f"인플레이션 예측 오류 발생: {e}. 기본 인플레이션율 2.5%를 사용합니다.")
-        return 0.025, inflation_rate_monthly, pd.Series()
-
-@st.cache_data
-def generate_cpi_data_for_app():
-    start_date = '2000-01-01'
-    end_date = datetime.date.today().strftime('%Y-%m-%d') # 현재 날짜까지
-    date_rng = pd.date_range(start=start_date, end=end_date, freq='MS')
-    initial_cpi = 80
-    np.random.seed(42)
-    # 실제 CPI 데이터와 유사한 패턴을 위해 더 작은 월별 변동 + 연간 추세
-    monthly_cpi_increase = np.random.normal(0.002, 0.001, len(date_rng)).cumsum() # 월 0.2% 성장 기준
-    cpi_data = pd.Series(initial_cpi * (1 + monthly_cpi_increase), index=date_rng)
-    # 2020년 1월을 100으로 기준점 조정
-    cpi_data = (cpi_data / cpi_data.loc['2020-01-01']) * 100
-    return cpi_data
-
-cpi_data_app = generate_cpi_data_for_app()
 
 # --- 적립식 투자 시뮬레이션 함수 (다중 이자율 변동 적용) ---
 # 매개변수 이름을 'change_months_option'에서 'change_months'로 변경했습니다.
