@@ -2,10 +2,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 from statsmodels.tsa.arima.model import ARIMA
 import warnings
 import datetime
-import random 
+import random
+import platform
 
 warnings.filterwarnings('ignore') 
 
@@ -15,9 +17,33 @@ st.title("경제수학 기반 예측 및 투자 시뮬레이션")
 st.markdown("---")
 
 
-plt.rcParams['font.family'] = 'Malgun Gothic' 
-plt.rcParams['axes.unicode_minus'] = False 
+# --- Matplotlib 한글 폰트 설정 ---
+# 운영체제에 따라 폰트 설정
+if platform.system() == 'Windows':
+    plt.rcParams['font.family'] = 'Malgun Gothic'
+elif platform.system() == 'Darwin': # Mac OS
+    plt.rcParams['font.family'] = 'AppleGothic'
+else: # Linux (Streamlit Cloud 환경)
+    # Streamlit Cloud에 packages.txt를 통해 설치된 나눔고딕 폰트 사용 시도
+    try:
+        # 폰트 캐시 디렉토리 확인 및 삭제
+        cache_dir = fm.get_cachedir()
+        if os.path.exists(cache_dir):
+            try:
+                shutil.rmtree(cache_dir) # 폰트 캐시 디렉토리 삭제
+                st.info(f"Matplotlib 폰트 캐시 삭제: {cache_dir}") # 디버깅용
+            except Exception as e:
+                st.warning(f"폰트 캐시 삭제 중 오류 발생: {e}")
 
+        # 나눔고딕 폰트 이름 직접 설정
+        # packages.txt에 fonts-nanum-extra가 설치되었다고 가정합니다.
+        plt.rcParams['font.family'] = 'NanumGothic' 
+        st.success(f"나눔고딕 폰트 설정 시도: {plt.rcParams['font.family']}") # 디버깅용
+    except Exception as e:
+        # 폰트 설정 오류 발생 시 경고 메시지 출력 및 대체 폰트 사용
+        st.warning(f"나눔고딕 폰트 설정 오류 발생: {e}. 그래프의 한글이 깨질 수 있습니다. `packages.txt`에 `fonts-nanum-extra`가 있는지 확인해주세요.")
+        plt.rcParams['font.family'] = ['sans-serif'] # 대체 폰트 (일반적인 고딕 계열)
+plt.rcParams['axes.unicode_minus'] = False # 마이너스 부호 깨짐 방지
 
 KOR_BASE_RATE_DATA_RAW = """
 202411월 28일3.00
