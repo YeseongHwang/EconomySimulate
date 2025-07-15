@@ -10,6 +10,16 @@ import random
 import platform
 import plotly.express as px # <-- Plotly Express 임포트
 import plotly.graph_objects as go
+import os
+
+# Plotly 관련 임포트는 try-except로 감싸서, 설치 안 되었을 때도 앱이 실행되도록 합니다.
+try:
+    import plotly.express as px 
+    import plotly.graph_objects as go
+    plotly_available = True
+except ImportError:
+    plotly_available = False
+    st.error("Plotly 라이브러리를 찾을 수 없습니다. requirements.txt 파일을 확인해주세요.") # <-- 디버깅 메시지
 
 warnings.filterwarnings('ignore') 
 
@@ -17,6 +27,14 @@ st.set_page_config(layout="wide")
 
 st.title("경제수학 기반 예측 및 투자 시뮬레이션")
 st.markdown("---")
+
+# --- 디버깅 정보 출력 (Streamlit Cloud에서 확인용) ---
+st.sidebar.subheader("⚙️ 앱 디버깅 정보") # <-- 디버깅 정보 추가
+st.sidebar.write(f"현재 작업 디렉토리: `{os.getcwd()}`")
+st.sidebar.write("현재 디렉토리 파일 목록:")
+for f in os.listdir('.'):
+    st.sidebar.write(f"- `{f}`")
+st.sidebar.write(f"Plotly 사용 가능 여부: `{plotly_available}`")
 
 
 
